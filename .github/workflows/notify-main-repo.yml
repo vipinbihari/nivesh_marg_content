@@ -1,0 +1,30 @@
+name: Notify Main Repository
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'posts/**'
+      - 'uploads/**'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout content repository
+        uses: actions/checkout@v3
+
+      - name: Get commit message
+        id: get_commit_message
+        run: |
+          echo "COMMIT_MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
+
+      - name: Trigger build in main repository
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GH_PAT }}
+          repository: vipinbihari/nivesh_marg
+          event-type: content-update
+          client-payload: '{"ref": "${{ github.ref }}", "commit_message": "${{ steps.get_commit_message.outputs.COMMIT_MESSAGE }}"}'
